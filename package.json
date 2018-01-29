@@ -1,0 +1,32 @@
+{
+  "name": "met-images",
+  "version": "1.0.0",
+  "description": "scrapes met images",
+  "main": "index.js",
+  "dependencies": {
+    "chalk": "^2.3.0",
+    "cheerio": "^1.0.0-rc.2",
+    "clear": "0.0.1",
+    "clui": "^0.3.6",
+    "csvtojson": "^1.1.9",
+    "figlet": "^1.2.0",
+    "fs": "^0.0.1-security",
+    "fs-extra": "^5.0.0",
+    "inquirer": "^5.0.1",
+    "jquery": "^3.3.1",
+    "json-2-csv": "^2.1.2",
+    "minimist": "^1.2.0",
+    "ora": "^1.3.0",
+    "performance-now": "^2.1.0",
+    "puppeteer": "^1.0.0",
+    "request": "^2.83.0",
+    "scrape-it": "^4.1.2",
+    "underscore": "^1.8.3"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "b",
+  "license": "ISC"
+}
