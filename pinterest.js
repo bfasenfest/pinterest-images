@@ -1,6 +1,7 @@
+#! /usr/bin/env node
+
 var fs          = require("fs-extra");
 var request     = require('request');
-var cheerio     = require('cheerio');
 var now         = require("performance-now")
 var chalk       = require('chalk');
 var clear       = require('clear');
@@ -242,15 +243,6 @@ function finishImage(topic) {
   if (itemsBeingProcessed <= maxItems && fileQueue.length > 0) {
     processImage(fileQueue.shift(), topic);
   }
-}
-
-function HTMLtoLink(html){
-  var $ = cheerio.load(html)
-  var icon = $('.icon--download')
-  var a = icon.parent()
-  var href = a.attr('href')
-  var parsed = href ? href.replace("{{selectedOrDefaultDownload('","").replace("')}}","") : ""
-  return parsed
 }
 
 async function asyncForEach(array, callback) {
