@@ -63,6 +63,38 @@ function getLocation(answers){
 
   var questions = [
     {
+      name: "itemType",
+      message: "Scrape using Pins or Boards?",
+      type: "list",
+      choices: ["Pins", "Boards"]
+    },
+    {
+      name: 'numBoards',
+      type: 'input',
+      message: 'How many boards do you want to scrape?',
+      default: 3,
+      when: function ( answers ) {
+        return answers.itemType == "Boards"
+      },
+      validate: function( value ) {
+        var isValid = !Number.isNaN(value);
+        return isValid || "This should be an integer number!";
+      }
+    },
+    {
+      name: 'maxImages',
+      type: 'input',
+      message: 'How many images do you want to download?',
+      default: 10,
+      when: function ( answers ) {
+        return answers.itemType == "Pins"
+      },
+      validate: function( value ) {
+        var isValid = !Number.isNaN(value);
+        return isValid || "This should be an integer number!";
+      }
+    },
+    {
       name: 'location',
       type: 'input',
       message: 'Enter location to save',
@@ -87,20 +119,11 @@ function getLocation(answers){
       name: "headless",
       default: false
     },
-    {
-      name: 'maxImages',
-      type: 'input',
-      message: 'How many images do you want to download?',
-      default: 10,
-      validate: function( value ) {
-        var isValid = !Number.isNaN(value);
-        return isValid || "This should be an integer number!";
-      }
-    },
   ];
 
   inquirer.prompt(questions).then(function(){
     responses = {...responses, ...arguments[0]} // responses.location = arguments[0].location
+    if (!response.maxImages) response.maxImages = 10
     responses.length = responses.maxImages * responses.topics.length
     initDownload()
   })
@@ -134,8 +157,6 @@ function initDownload(){
     await browse(topic, page)
     if (index == topics.length - 1) browser.close();
   })
-
-
 }
 
 async function startBrowser() {
@@ -161,17 +182,31 @@ async function startBrowser() {
     windowId
   })
 
+  if (responses.itemType == "Board") {
+    await logIn(page)
+  }
+
   return {browser, page}
 }
 
 async function browse(topic, page) {
   let topicUrl = encodeURIComponent(topic.name)
+
   await page.goto(topic.page)
   await page.waitFor(1000);
 
+  if (topic.useBoards) {
+    let sel = body > div:nth-child(3) > div > div:nth-child(1) > div > div > div.appContent > div > div.boardPageContentWrapper > div.ReactBoardHeader > div.boardHeaderWrapper.py2.desktopHeader > div > div > div.belowBoardNameContainer > div > div._0._3i._2m._jp > div:nth-child(1) > span._st._ss._su._sl._5j._sm._sq._nk._nl._nm._nn
+    var numPins = page.evaluate(() => document.querySelector(sel).textContent);
+  }
+
   let artworks = []
   for (i = 1; i <= responses.maxImages; i++){
-    let sel = 'body > div.App.AppBase.Module > div.appContent > div.mainContainer > div > div > div > div > div:nth-child(2) > div > div > div > div:nth-child(' + i + ') > div > div.GrowthUnauthPinImage > a > img'
+    let pinSel = 'body > div.App.AppBase.Module > div.appContent > div.mainContainer > div > div > div > div > div:nth-child(2) > div > div > div > div:nth-child(' + i + ') > div > div.GrowthUnauthPinImage > a > img'
+    let boardSel = 'body > div:nth-child(3) > div > div:nth-child(1) > div > div > div.appContent > div > div.SearchPage > div > div > div > div:nth-child(' + i ')'
+
+    let sel = topic.useBoards ? boardSel : pinSel
+
     let artwork = await page.evaluate((i, sel) => {
       let data = {}
       let item = document.querySelector(sel) //('div.GrowthUnauthPin_brioPin')
@@ -187,6 +222,22 @@ async function browse(topic, page) {
     artworks.push(artwork)
 }
   return artworks
+}
+
+async function logIn(page){
+  await page.goto('https://www.pinterest.com/')
+  await page.click('body > div:nth-child(3) > div > div > div > div > div:nth-child(4) > div > div:nth-child(2) > button') // Log in Button
+  await page.waitFor(500);
+  await page.click('#email')
+  await page.waitFor(500);
+  await page.keyboard.type('pinterestdownloader@gmail.com')
+  await page.waitFor(500);
+  await page.click('#password')
+  await page.waitFor(500);
+  await page.keyboard.type('downloader!')
+  await page.waitFor(500);
+  await page.click('body > div.App.AppBase.Module > div > div.mainContainer > div > div > div > div > div > div > div:nth-child(2) > form > button')
+  await page.waitForNavigation();
 }
 
 function processImage(artwork, topic) {
