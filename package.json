@@ -15,7 +15,7 @@
     "request": "^2.83.0"
   },
   "bin": {
-  "pinterest": "./pinterest.js"
+    "pinterest": "./pinterest.js"
   },
   "scripts": {
     "pinterest": "./pinterest.js"
