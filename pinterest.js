@@ -123,7 +123,7 @@ function getLocation(answers){
 
   inquirer.prompt(questions).then(function(){
     responses = {...responses, ...arguments[0]} // responses.location = arguments[0].location
-    if (!response.maxImages) response.maxImages = 10
+    if (!responses.maxImages) responses.maxImages = 10
     responses.length = responses.maxImages * responses.topics.length
     initDownload()
   })
@@ -193,7 +193,7 @@ async function getPins(topic, page) {
   let topicUrl = encodeURIComponent(topic.name)
 
   await page.goto(topic.page)
-  await page.waitFor(1000);
+  await page.waitFor(2000)
 
   if (topic.useBoards) {
     let sel = 'body > div:nth-child(3) > div > div:nth-child(1) > div > div > div.appContent > div > div.boardPageContentWrapper > div.ReactBoardHeader > div.boardHeaderWrapper.py2.desktopHeader > div > div > div.belowBoardNameContainer > div > div._0._3i._2m._jp > div:nth-child(1) > span._st._ss._su._sl._5j._sm._sq._nk._nl._nm._nn'
@@ -202,10 +202,18 @@ async function getPins(topic, page) {
 
   let artworks = []
   for (i = 1; i <= responses.maxImages; i++){
-    let pinSel = 'body > div.App.AppBase.Module > div.appContent > div.mainContainer > div > div > div > div > div:nth-child(2) > div > div > div > div:nth-child(' + i + ') > div > div.GrowthUnauthPinImage > a > img'
+    let pinSel = 'body > div:nth-child(1) > div > div > div > div > div:nth-child(2) > div:nth-child(2) > div > div > div:nth-child(1) > div:nth-child(' + i + ') > div > div > div.GrowthUnauthPinImage > a > img'
     let boardSel = 'body > div:nth-child(3) > div > div:nth-child(1) > div > div > div.appContent > div > div.SearchPage > div > div > div > div:nth-child(' + i + ')'
 
-    let sel = topic.useBoards ? boardSel : pinSel
+    let sel = topic.useBoards ? boardSel : getPinSel(i)
+
+    try {
+      await page.waitForSelector(sel, { timeout: 500 })
+      // ...
+    } catch (error) {
+      await page.hover(getPinSel(i-1))
+      await page.waitFor(1000)
+    }
 
     let artwork = await page.evaluate((i, sel) => {
       let data = {}
@@ -214,9 +222,17 @@ async function getPins(topic, page) {
       data.title = item ? item.getAttribute('alt') : ''
       return data
     }, i, sel)
+
     if (i % 20 == 0) {
-      await page.hover(sel)
-      await page.waitFor(1500)
+      // await page.hover(sel)
+      // await page.waitFor(1000)
+
+      // let dialogSel = 'body > div:nth-child(1) > div > div > div > div > div:nth-child(4) > div > div:nth-child(2) > div'
+      // let dialogVisible = page.evaluate((dialogSel) => document.querySelector(dialogSel).getAttribute('style').length > 60)
+      // if (dialogVisible) {
+      //   await page.click(dialogSel + ' > button')
+      //   await page.waitFor(1000)
+      // }
     }
     processImage(artwork, topic)
     artworks.push(artwork)
@@ -225,41 +241,6 @@ async function getPins(topic, page) {
 }
 
 
-
-async function getPins(topic, page) {
-  let topicUrl = encodeURIComponent(topic.name)
-
-  await page.goto(topic.page)
-  await page.waitFor(1000);
-
-  if (topic.useBoards) {
-    let sel = 'body > div:nth-child(3) > div > div:nth-child(1) > div > div > div.appContent > div > div.boardPageContentWrapper > div.ReactBoardHeader > div.boardHeaderWrapper.py2.desktopHeader > div > div > div.belowBoardNameContainer > div > div._0._3i._2m._jp > div:nth-child(1) > span._st._ss._su._sl._5j._sm._sq._nk._nl._nm._nn'
-    var numPins = page.evaluate(() => document.querySelector(sel).textContent);
-  }
-
-  let artworks = []
-  for (i = 1; i <= responses.maxImages; i++){
-    let pinSel = 'body > div.App.AppBase.Module > div.appContent > div.mainContainer > div > div > div > div > div:nth-child(2) > div > div > div > div:nth-child(' + i + ') > div > div.GrowthUnauthPinImage > a > img'
-    let boardSel = 'body > div:nth-child(3) > div > div:nth-child(1) > div > div > div.appContent > div > div.SearchPage > div > div > div > div:nth-child(' + i + ')'
-
-    let sel = topic.useBoards ? boardSel : pinSel
-
-    let artwork = await page.evaluate((i, sel) => {
-      let data = {}
-      let item = document.querySelector(sel) //('div.GrowthUnauthPin_brioPin')
-      data.imgSrc = item ? item.getAttribute('src').replace(/236x/, 'originals') : ''
-      data.title = item ? item.getAttribute('alt') : ''
-      return data
-    }, i, sel)
-    if (i % 20 == 0) {
-      await page.hover(sel)
-      await page.waitFor(1500)
-    }
-    processImage(artwork, topic)
-    artworks.push(artwork)
-}
-  return artworks
-}
 
 async function logIn(page){
   await page.goto('https://www.pinterest.com/')
@@ -337,4 +318,8 @@ async function asyncForEach(array, callback) {
   for (let index = 0; index < array.length; index++) {
     await callback(array[index], index, array)
   }
+}
+
+function getPinSel(num){
+  return 'body > div:nth-child(1) > div > div > div > div > div:nth-child(2) > div:nth-child(2) > div > div > div:nth-child(1) > div:nth-child(' + num + ') > div > div > div.GrowthUnauthPinImage > a > img'
 }
