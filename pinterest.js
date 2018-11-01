@@ -207,13 +207,7 @@ async function getPins(topic, page) {
 
     let sel = topic.useBoards ? boardSel : getPinSel(i)
 
-    try {
-      await page.waitForSelector(sel, { timeout: 500 })
-      // ...
-    } catch (error) {
-      await page.hover(getPinSel(i-1))
-      await page.waitFor(1000)
-    }
+    // await scrollAndWait(page, i)
 
     let artwork = await page.evaluate((i, sel) => {
       let data = {}
@@ -223,9 +217,9 @@ async function getPins(topic, page) {
       return data
     }, i, sel)
 
-    if (i % 20 == 0) {
-      // await page.hover(sel)
-      // await page.waitFor(1000)
+    if (i % 10 == 0) {
+      await page.hover(sel)
+      await page.waitFor(1500)
 
       // let dialogSel = 'body > div:nth-child(1) > div > div > div > div > div:nth-child(4) > div > div:nth-child(2) > div'
       // let dialogVisible = page.evaluate((dialogSel) => document.querySelector(dialogSel).getAttribute('style').length > 60)
@@ -321,5 +315,17 @@ async function asyncForEach(array, callback) {
 }
 
 function getPinSel(num){
-  return 'body > div:nth-child(1) > div > div > div > div > div:nth-child(2) > div:nth-child(2) > div > div > div:nth-child(1) > div:nth-child(' + num + ') > div > div > div.GrowthUnauthPinImage > a > img'
+  return 'body > div:nth-child(1) > div > div > div > div > div:nth-child(2) > div:nth-child(2) > div > div > div > div:nth-child(' + num + ') > div > div > div.GrowthUnauthPinImage > a > div > img'
+}
+
+async function scrollAndWait(page, i){
+  try {
+    await page.waitForSelector(getPinSel(i+10), { timeout: 500 })
+    return
+    // ...
+  } catch (error) {
+    if (i > 10) await page.hover(getPinSel(i+5))
+    await page.waitFor(1000)
+    scrollAndWait(page, i)
+  }
 }
